@@ -1,4 +1,6 @@
 import { AppServer, AppSession, ViewType } from '@mentra/sdk';
+import * as fs from 'fs';
+import * as path from 'path';
 
 
 const PACKAGE_NAME = process.env.PACKAGE_NAME ?? (() => { throw new Error('PACKAGE_NAME is not set in .env file'); })();
@@ -14,25 +16,51 @@ class ExampleMentraOSApp extends AppServer {
       port: PORT,
     });
   }
-
   protected async onSession(session: AppSession, sessionId: string, userId: string): Promise<void> {
-    // Show welcome message
-    session.layouts.showTextWall("Example App is ready!");
+    // convert bitmap to base64
+      const imagePath = path.join(__dirname, `./nokia.bmp`);
+      const imageBuffer = fs.readFileSync(imagePath);
+      const imageBase64 = imageBuffer.toString('base64');
+      session.logger.info(`Generated Bitmap Base64: ${imageBase64}`);
 
-    // Handle real-time transcription
-    // requires microphone permission to be set in the developer console
-    session.events.onTranscription((data) => {
-      if (data.isFinal) {
-        session.layouts.showTextWall("You said: " + data.text, {
-          view: ViewType.MAIN,
-          durationMs: 3000
-        });
-      }
-    })
+      const myText = "Nokia by Drake";
+      const myTextBase64 = Buffer.from(myText).toString('base64');
+      session.logger.info(`Generated Text Base64: ${myTextBase64}`);
 
-    session.events.onGlassesBattery((data) => {
-      console.log('Glasses battery:', data);
-    })
+      session.layouts.showBitmapView(imageBase64);
+      session.dashboard.content.writeToMain('Your text content');
+
+
+      // session.layouts.showTextWall(myTextBase64, {
+      //   view: ViewType.MAIN,
+      //   durationMs: 3000
+      // });
+
+
+
+    // // Subscribe to audio chunk stream
+    // await session.subscribe('AUDIO_CHUNK');
+
+    // // Buffer to store audio chunks
+    // const audioChunks: Buffer[] = [];
+
+    // // Register handler for audio chunks
+    // const unsubscribe = session.events.onAudioChunk((data) => {
+    //   // Log the AudioChunk object to inspect its structure
+    //   session.logger.info('AudioChunk received:', data);
+    //   // ...existing code...
+    // });
+
+    // // Example: Save audio after 10 seconds (replace with session end logic as needed)
+    // setTimeout(() => {
+    //   if (audioChunks.length > 0) {
+    //     const audioBuffer = Buffer.concat(audioChunks);
+    //     const audioFilePath = path.join(__dirname, `recorded_audio.raw`); // Use .wav if you have header info
+    //     fs.writeFileSync(audioFilePath, audioBuffer);
+    //     session.logger.info(`Saved audio to ${audioFilePath}`);
+    //   }
+    //   unsubscribe();
+    // }, 10000);
   }
 }
 
